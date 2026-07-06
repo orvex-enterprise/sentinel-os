@@ -1,0 +1,45 @@
+{
+  "$ref": "#/definitions/RootCauseAnalysis",
+  "definitions": {
+    "RootCauseAnalysis": {
+      "type": "object",
+      "properties": {
+        "rca_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "root_cause": {
+          "type": "string"
+        },
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "supporting_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "rca_id",
+        "summary",
+        "root_cause",
+        "confidence_score",
+        "supporting_evidence",
+        "created_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

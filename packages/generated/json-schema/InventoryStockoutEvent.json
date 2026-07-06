@@ -1,0 +1,39 @@
+{
+  "$ref": "#/definitions/InventoryStockoutEvent",
+  "definitions": {
+    "InventoryStockoutEvent": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string",
+          "minLength": 1
+        },
+        "warehouse_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_stock": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "safety_stock_threshold": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "sku",
+        "warehouse_id",
+        "current_stock",
+        "safety_stock_threshold",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

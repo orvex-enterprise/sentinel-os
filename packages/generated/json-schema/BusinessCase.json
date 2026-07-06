@@ -1,0 +1,251 @@
+{
+  "$ref": "#/definitions/BusinessCase",
+  "definitions": {
+    "BusinessCase": {
+      "type": "object",
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "domain": {
+          "type": "string",
+          "default": "INVENTORY_OPERATIONS"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "DETECTED",
+            "INVESTIGATING",
+            "PLAN_GENERATED",
+            "AWAITING_APPROVAL",
+            "APPROVED",
+            "EXECUTING",
+            "EXECUTION_FAILED",
+            "CLOSED_SUCCESS",
+            "CLOSED_REJECTED",
+            "CLOSED_FAILED"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "default": 1
+        },
+        "anomaly": {
+          "type": "object",
+          "properties": {
+            "anomaly_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "event_type": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "z_score": {
+              "type": "number"
+            },
+            "description": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object",
+              "additionalProperties": {},
+              "default": {}
+            }
+          },
+          "required": [
+            "anomaly_id",
+            "event_type",
+            "severity",
+            "z_score",
+            "description"
+          ],
+          "additionalProperties": false
+        },
+        "rca": {
+          "type": "object",
+          "properties": {
+            "rca_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "root_cause": {
+              "type": "string"
+            },
+            "confidence_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "supporting_evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "rca_id",
+            "summary",
+            "root_cause",
+            "confidence_score",
+            "supporting_evidence",
+            "created_at"
+          ],
+          "additionalProperties": false
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "plan_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "action_type": {
+                    "type": "string"
+                  },
+                  "target_system": {
+                    "type": "string"
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "expected_outcome": {
+                    "type": "string"
+                  },
+                  "risk_level": {
+                    "type": "string",
+                    "enum": [
+                      "LOW",
+                      "MEDIUM",
+                      "HIGH",
+                      "CRITICAL"
+                    ]
+                  },
+                  "idempotency_key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action_id",
+                  "action_type",
+                  "target_system",
+                  "parameters",
+                  "expected_outcome",
+                  "risk_level",
+                  "idempotency_key"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "estimated_recovery_time_minutes": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "plan_id",
+            "summary",
+            "actions",
+            "estimated_recovery_time_minutes",
+            "created_at"
+          ],
+          "additionalProperties": false
+        },
+        "audit_trail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "audit_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "case_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "actor": {
+                "type": "string"
+              },
+              "action_performed": {
+                "type": "string"
+              },
+              "previous_status": {
+                "$ref": "#/definitions/BusinessCase/properties/status"
+              },
+              "new_status": {
+                "$ref": "#/definitions/BusinessCase/properties/status"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": {},
+                "default": {}
+              }
+            },
+            "required": [
+              "audit_id",
+              "case_id",
+              "actor",
+              "action_performed",
+              "new_status",
+              "timestamp"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "case_id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,28 @@
+{
+  "$ref": "#/definitions/RejectionRequest",
+  "definitions": {
+    "RejectionRequest": {
+      "type": "object",
+      "properties": {
+        "operator_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request_replanning": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "operator_id",
+        "reason"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

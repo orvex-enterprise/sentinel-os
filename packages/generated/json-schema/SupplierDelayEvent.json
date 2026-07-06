@@ -1,0 +1,47 @@
+{
+  "$ref": "#/definitions/SupplierDelayEvent",
+  "definitions": {
+    "SupplierDelayEvent": {
+      "type": "object",
+      "properties": {
+        "po_number": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sku": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_delivery_date": {
+          "type": "string"
+        },
+        "revised_delivery_date": {
+          "type": "string"
+        },
+        "delay_days": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "po_number",
+        "supplier_id",
+        "sku",
+        "original_delivery_date",
+        "revised_delivery_date",
+        "delay_days",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

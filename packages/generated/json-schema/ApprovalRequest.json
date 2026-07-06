@@ -1,0 +1,22 @@
+{
+  "$ref": "#/definitions/ApprovalRequest",
+  "definitions": {
+    "ApprovalRequest": {
+      "type": "object",
+      "properties": {
+        "operator_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

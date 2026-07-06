@@ -1,0 +1,10 @@
+[project]
+name = "sentinel-simulator"
+version = "1.0.0"
+description = "Sentinel OS Deterministic Inventory Simulator"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0.0",
+    "redis>=5.0.0",
+    "psycopg2-binary>=2.9.0"
+]

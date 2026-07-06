@@ -1,0 +1,21 @@
+{
+  "$ref": "#/definitions/CaseStatus",
+  "definitions": {
+    "CaseStatus": {
+      "type": "string",
+      "enum": [
+        "DETECTED",
+        "INVESTIGATING",
+        "PLAN_GENERATED",
+        "AWAITING_APPROVAL",
+        "APPROVED",
+        "EXECUTING",
+        "EXECUTION_FAILED",
+        "CLOSED_SUCCESS",
+        "CLOSED_REJECTED",
+        "CLOSED_FAILED"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

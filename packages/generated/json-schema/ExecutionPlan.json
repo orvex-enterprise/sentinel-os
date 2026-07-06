@@ -1,0 +1,81 @@
+{
+  "$ref": "#/definitions/ExecutionPlan",
+  "definitions": {
+    "ExecutionPlan": {
+      "type": "object",
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "action_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "action_type": {
+                "type": "string"
+              },
+              "target_system": {
+                "type": "string"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "expected_outcome": {
+                "type": "string"
+              },
+              "risk_level": {
+                "type": "string",
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "CRITICAL"
+                ]
+              },
+              "idempotency_key": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action_id",
+              "action_type",
+              "target_system",
+              "parameters",
+              "expected_outcome",
+              "risk_level",
+              "idempotency_key"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "estimated_recovery_time_minutes": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "plan_id",
+        "summary",
+        "actions",
+        "estimated_recovery_time_minutes",
+        "created_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

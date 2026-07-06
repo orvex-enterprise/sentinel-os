@@ -1,0 +1,48 @@
+{
+  "$ref": "#/definitions/ReceivingDiscrepancyEvent",
+  "definitions": {
+    "ReceivingDiscrepancyEvent": {
+      "type": "object",
+      "properties": {
+        "po_number": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sku": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_quantity": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "received_quantity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "discrepancy_percentage": {
+          "type": "number"
+        },
+        "warehouse_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "po_number",
+        "sku",
+        "expected_quantity",
+        "received_quantity",
+        "discrepancy_percentage",
+        "warehouse_id",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

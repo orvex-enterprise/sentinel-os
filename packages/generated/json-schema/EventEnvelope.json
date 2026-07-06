@@ -1,0 +1,48 @@
+{
+  "$ref": "#/definitions/EventEnvelope",
+  "definitions": {
+    "EventEnvelope": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_system": {
+          "type": "string",
+          "minLength": 1
+        },
+        "correlation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "version": {
+          "type": "string",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "timestamp",
+        "source_system",
+        "correlation_id",
+        "payload"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
