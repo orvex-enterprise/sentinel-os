@@ -47,7 +47,7 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isSwarmActive]);
+  }, []);
 
   useEffect(() => {
     // If activeSku is provided, ensure it's in the list for the chart
