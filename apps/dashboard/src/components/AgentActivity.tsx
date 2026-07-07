@@ -24,8 +24,8 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
   });
 
   useEffect(() => {
-    if (!isSwarmActive) return;
-
+    // The swarm activity itself should not be paused. Pause only stops new anomalies from being generated.
+    
     const timer = setInterval(() => {
       let newLoad = 10 + Math.random() * 20;
       let newConfidence = 90 + Math.random() * 5;

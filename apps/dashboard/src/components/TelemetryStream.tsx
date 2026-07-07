@@ -26,8 +26,6 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
   ]);
 
   useEffect(() => {
-    if (!isSwarmActive) return;
-
     const interval = setInterval(() => {
       setStreamData((prev) => ({
         ...prev,
