@@ -83,13 +83,13 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             onClick={() => setIsSwarmActive(!isSwarmActive)}
-            className={`badge ${isSwarmActive ? 'badge-success' : 'badge-critical'}`} 
+            className={`badge ${isSwarmActive ? 'badge-critical' : 'badge-success'}`} 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
             {isSwarmActive ? (
-              <><Activity size={14} /> Swarm Active (Pause)</>
+              <>🔴 Pause Auto-Simulation</>
             ) : (
-              <><Terminal size={14} /> Swarm Paused (Resume)</>
+              <>🟢 Start Auto-Simulation</>
             )}
           </button>
         </div>

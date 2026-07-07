@@ -110,6 +110,24 @@ export default function App() {
     }
   };
 
+  // Automated Anomaly Simulation Loop
+  useEffect(() => {
+    if (!isSwarmActive) return;
+
+    const interval = setInterval(() => {
+      dispatchSimulationEvent()
+        .then(({ caseId }) => {
+          toast.success(`Automated Demo Anomaly injected: Case ${caseId}`, { icon: '🤖' });
+          loadCases();
+        })
+        .catch((err) => {
+          console.error('[Simulation Error]', err);
+        });
+    }, 15000); // 15 seconds interval
+
+    return () => clearInterval(interval);
+  }, [isSwarmActive, loadCases]);
+
   const handleTriggerSimulation = async () => {
     setIsInjecting(true);
     try {

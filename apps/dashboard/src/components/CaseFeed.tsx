@@ -106,18 +106,18 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
             </div>
             <button 
               onClick={() => setIsSwarmActive(!isSwarmActive)}
-              className={`btn-primary ${isSwarmActive ? 'btn-success' : 'btn-critical'}`}
-              style={{ padding: '8px 16px', fontSize: '0.9rem', background: isSwarmActive ? 'var(--accent-emerald)' : 'var(--accent-rose)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px' }}
+              className={`btn-primary ${isSwarmActive ? 'btn-critical' : 'btn-success'}`}
+              style={{ padding: '8px 16px', fontSize: '0.9rem', background: isSwarmActive ? 'var(--accent-rose)' : 'var(--accent-emerald)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px' }}
             >
-              {isSwarmActive ? 'Simulation Active (Pause)' : 'Simulation Paused (Start)'}
+              {isSwarmActive ? '🔴 Pause Auto-Simulation' : '🟢 Start Auto-Simulation'}
             </button>
             <button
               onClick={onTriggerSimulation}
               disabled={isInjecting}
               className="btn-primary"
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+              style={{ padding: '8px 16px', fontSize: '0.9rem', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
             >
-              {isInjecting ? 'Injecting Anomaly...' : '+ Inject Demo Anomaly'}
+              {isInjecting ? 'Injecting...' : '+ Inject Single Anomaly'}
             </button>
           </div>
         </div>

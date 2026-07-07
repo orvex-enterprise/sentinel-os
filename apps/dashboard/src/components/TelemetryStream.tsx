@@ -79,10 +79,10 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             onClick={() => setIsSwarmActive(!isSwarmActive)}
-            className={`badge ${isSwarmActive ? 'badge-info' : 'badge-critical'}`} 
+            className={`badge ${isSwarmActive ? 'badge-critical' : 'badge-success'}`} 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
-            <Database size={14} /> {isSwarmActive ? 'Redis Stream Active (Pause)' : 'Redis Stream Paused (Simulate)'}
+            {isSwarmActive ? '🔴 Pause Auto-Simulation' : '🟢 Start Auto-Simulation'}
           </button>
         </div>
       </div>
