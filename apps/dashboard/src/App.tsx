@@ -15,7 +15,8 @@ export default function App() {
   const [caseDetail, setCaseDetail] = useState<CaseDetailData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [isInjecting, setIsInjecting] = useState(false);
+  const [isSwarmActive, setIsSwarmActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'audit' | 'activity' | 'telemetry'>('overview');
   const [fetchLimit, setFetchLimit] = useState(20);
   const [globalTotal, setGlobalTotal] = useState(0);
@@ -110,14 +111,15 @@ export default function App() {
   };
 
   const handleTriggerSimulation = async () => {
-    setIsSimulating(true);
+    setIsInjecting(true);
     try {
-      await dispatchSimulationEvent('SKU-9942');
+      const { caseId } = await dispatchSimulationEvent();
+      toast.success(`Demo anomaly injected! Initiating swarm resolution for Case ${caseId}...`, { icon: '🤖' });
       await loadCases();
     } catch (err: any) {
-      alert(`Simulation Error: ${err.message}`);
+      toast.error(`Simulation failed: ${err.message}`);
     } finally {
-      setIsSimulating(false);
+      setIsInjecting(false);
     }
   };
 
@@ -166,7 +168,9 @@ export default function App() {
               selectedId={selectedId}
               onSelect={setSelectedId}
               onTriggerSimulation={handleTriggerSimulation}
-              isSimulating={isSimulating}
+              isInjecting={isInjecting}
+              isSwarmActive={isSwarmActive}
+              setIsSwarmActive={setIsSwarmActive}
               fetchLimit={fetchLimit}
               onSetFetchLimit={setFetchLimit}
               globalTotal={globalTotal}
@@ -225,11 +229,21 @@ export default function App() {
               </div>
             ) : activeTab === 'activity' ? (
               <div className="animate-fade-in">
-                <AgentActivity currentStatus={caseDetail?.status} sku={caseDetail?.sku} />
+                <AgentActivity 
+                  currentStatus={caseDetail?.status} 
+                  sku={caseDetail?.sku} 
+                  isSwarmActive={isSwarmActive} 
+                  setIsSwarmActive={setIsSwarmActive} 
+                />
               </div>
             ) : activeTab === 'telemetry' ? (
               <div className="animate-fade-in">
-                <TelemetryStream activeSku={caseDetail?.sku} activeZScore={caseDetail?.zScore} />
+                <TelemetryStream 
+                  activeSku={caseDetail?.sku} 
+                  activeZScore={caseDetail?.zScore} 
+                  isSwarmActive={isSwarmActive} 
+                  setIsSwarmActive={setIsSwarmActive} 
+                />
               </div>
             ) : (
               <div className="animate-fade-in">

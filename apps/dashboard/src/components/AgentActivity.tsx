@@ -5,10 +5,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface AgentActivityProps {
   currentStatus?: string;
   sku?: string;
+  isSwarmActive: boolean;
+  setIsSwarmActive: (val: boolean) => void;
 }
 
-export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'DETECTED', sku = 'SKU-9942' }) => {
-  const [isSimulating, setIsSimulating] = useState(true);
+export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'DETECTED', sku = 'SKU-9942', isSwarmActive, setIsSwarmActive }) => {
   const [chartData, setChartData] = useState<any[]>(() => 
     Array.from({ length: 20 }, (_, i) => ({
       time: i,
@@ -23,7 +24,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
   });
 
   useEffect(() => {
-    if (!isSimulating) return;
+    if (!isSwarmActive) return;
 
     const timer = setInterval(() => {
       let newLoad = 10 + Math.random() * 20;
@@ -53,7 +54,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
     }, 2000);
 
     return () => clearInterval(timer);
-  }, [currentStatus, isSimulating]);
+  }, [currentStatus, isSwarmActive]);
 
   const getNodeStatus = (nodeName: string) => {
     if (currentStatus === 'CLOSED_SUCCESS' || currentStatus === 'RESOLVED') return 'completed';
@@ -81,11 +82,11 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
-            onClick={() => setIsSimulating(!isSimulating)}
-            className={`badge ${isSimulating ? 'badge-success' : 'badge-critical'}`} 
+            onClick={() => setIsSwarmActive(!isSwarmActive)}
+            className={`badge ${isSwarmActive ? 'badge-success' : 'badge-critical'}`} 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
-            {isSimulating ? (
+            {isSwarmActive ? (
               <><Activity size={14} /> Swarm Active (Pause)</>
             ) : (
               <><Terminal size={14} /> Swarm Paused (Resume)</>

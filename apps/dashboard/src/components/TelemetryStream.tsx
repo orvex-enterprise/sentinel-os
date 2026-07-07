@@ -5,10 +5,11 @@ import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 interface TelemetryStreamProps {
   activeSku?: string;
   activeZScore?: number;
+  isSwarmActive: boolean;
+  setIsSwarmActive: (val: boolean) => void;
 }
 
-export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, activeZScore }) => {
-  const [isSimulating, setIsSimulating] = useState(false);
+export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, activeZScore, isSwarmActive, setIsSwarmActive }) => {
   const [streamData, setStreamData] = useState({
     receivingRate: 42.5,
     dockTurnaroundMins: 48.2,
@@ -25,7 +26,7 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
   ]);
 
   useEffect(() => {
-    if (!isSimulating) return;
+    if (!isSwarmActive) return;
 
     const interval = setInterval(() => {
       setStreamData((prev) => ({
@@ -50,7 +51,7 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isSimulating]);
+  }, [isSwarmActive]);
 
   useEffect(() => {
     // If activeSku is provided, ensure it's in the list for the chart
@@ -77,11 +78,11 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
-            onClick={() => setIsSimulating(!isSimulating)}
-            className={`badge ${isSimulating ? 'badge-info' : 'badge-critical'}`} 
+            onClick={() => setIsSwarmActive(!isSwarmActive)}
+            className={`badge ${isSwarmActive ? 'badge-info' : 'badge-critical'}`} 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
-            <Database size={14} /> {isSimulating ? 'Redis Stream Active (Pause)' : 'Redis Stream Paused (Simulate)'}
+            <Database size={14} /> {isSwarmActive ? 'Redis Stream Active (Pause)' : 'Redis Stream Paused (Simulate)'}
           </button>
         </div>
       </div>

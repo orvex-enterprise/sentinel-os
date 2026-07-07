@@ -7,7 +7,9 @@ interface CaseFeedProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onTriggerSimulation: () => void;
-  isSimulating: boolean;
+  isInjecting: boolean;
+  isSwarmActive: boolean;
+  setIsSwarmActive: (val: boolean) => void;
   fetchLimit: number;
   onSetFetchLimit: (limit: number) => void;
   globalTotal: number;
@@ -19,7 +21,9 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
   selectedId,
   onSelect,
   onTriggerSimulation,
-  isSimulating,
+  isInjecting,
+  isSwarmActive,
+  setIsSwarmActive,
   fetchLimit,
   onSetFetchLimit,
   globalTotal,
@@ -100,13 +104,20 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
                 Full History
               </button>
             </div>
+            <button 
+              onClick={() => setIsSwarmActive(!isSwarmActive)}
+              className={`btn-primary ${isSwarmActive ? 'btn-success' : 'btn-critical'}`}
+              style={{ padding: '8px 16px', fontSize: '0.9rem', background: isSwarmActive ? 'var(--accent-emerald)' : 'var(--accent-rose)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px' }}
+            >
+              {isSwarmActive ? 'Simulation Active (Pause)' : 'Simulation Paused (Start)'}
+            </button>
             <button
               onClick={onTriggerSimulation}
-              disabled={isSimulating}
+              disabled={isInjecting}
               className="btn-primary"
               style={{ padding: '8px 16px', fontSize: '0.9rem' }}
             >
-              {isSimulating ? 'Injecting Anomaly...' : '+ Inject Demo Anomaly'}
+              {isInjecting ? 'Injecting Anomaly...' : '+ Inject Demo Anomaly'}
             </button>
           </div>
         </div>
