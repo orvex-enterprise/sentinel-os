@@ -5,11 +5,9 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface AgentActivityProps {
   currentStatus?: string;
   sku?: string;
-  isSwarmActive: boolean;
-  setIsSwarmActive: (val: boolean) => void;
 }
 
-export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'DETECTED', sku = 'SKU-9942', isSwarmActive, setIsSwarmActive }) => {
+export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'DETECTED', sku = 'SKU-9942' }) => {
   const [chartData, setChartData] = useState<any[]>(() => 
     Array.from({ length: 20 }, (_, i) => ({
       time: i,
@@ -54,7 +52,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
     }, 2000);
 
     return () => clearInterval(timer);
-  }, [currentStatus, isSwarmActive]);
+  }, [currentStatus]);
 
   const getNodeStatus = (nodeName: string) => {
     if (currentStatus === 'CLOSED_SUCCESS' || currentStatus === 'RESOLVED') return 'completed';
@@ -79,19 +77,6 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
             <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>Autonomous Reasoning Pipeline</h2>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Real-time agentic workflow execution & decision synthesis</span>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={() => setIsSwarmActive(!isSwarmActive)}
-            className={`badge ${isSwarmActive ? 'badge-critical' : 'badge-success'}`} 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
-          >
-            {isSwarmActive ? (
-              <>Pause Auto-Simulation</>
-            ) : (
-              <>Start Auto-Simulation</>
-            )}
-          </button>
         </div>
       </div>
 

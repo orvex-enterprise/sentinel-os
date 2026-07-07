@@ -16,7 +16,6 @@ export default function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInjecting, setIsInjecting] = useState(false);
-  const [isSwarmActive, setIsSwarmActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'audit' | 'activity' | 'telemetry'>('overview');
   const [fetchLimit, setFetchLimit] = useState(20);
   const [globalTotal, setGlobalTotal] = useState(0);
@@ -110,11 +109,6 @@ export default function App() {
     }
   };
 
-  // Sync UI state with backend simulation engine
-  useEffect(() => {
-    setSimulationState(isSwarmActive).catch(err => console.error('[App] Failed to sync simulation state:', err));
-  }, [isSwarmActive]);
-
   const handleTriggerSimulation = async () => {
     setIsInjecting(true);
     try {
@@ -174,8 +168,6 @@ export default function App() {
               onSelect={setSelectedId}
               onTriggerSimulation={handleTriggerSimulation}
               isInjecting={isInjecting}
-              isSwarmActive={isSwarmActive}
-              setIsSwarmActive={setIsSwarmActive}
               fetchLimit={fetchLimit}
               onSetFetchLimit={setFetchLimit}
               globalTotal={globalTotal}
@@ -237,8 +229,6 @@ export default function App() {
                 <AgentActivity 
                   currentStatus={caseDetail?.status} 
                   sku={caseDetail?.sku} 
-                  isSwarmActive={isSwarmActive} 
-                  setIsSwarmActive={setIsSwarmActive} 
                 />
               </div>
             ) : activeTab === 'telemetry' ? (
@@ -246,8 +236,6 @@ export default function App() {
                 <TelemetryStream 
                   activeSku={caseDetail?.sku} 
                   activeZScore={caseDetail?.zScore} 
-                  isSwarmActive={isSwarmActive} 
-                  setIsSwarmActive={setIsSwarmActive} 
                 />
               </div>
             ) : (

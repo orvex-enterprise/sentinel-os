@@ -5,11 +5,9 @@ import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 interface TelemetryStreamProps {
   activeSku?: string;
   activeZScore?: number;
-  isSwarmActive: boolean;
-  setIsSwarmActive: (val: boolean) => void;
 }
 
-export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, activeZScore, isSwarmActive, setIsSwarmActive }) => {
+export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, activeZScore }) => {
   const [streamData, setStreamData] = useState({
     receivingRate: 42.5,
     dockTurnaroundMins: 48.2,
@@ -73,15 +71,6 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
             <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>WMS Inventory Telemetry Stream</h2>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Continuous IoT dock sensor ingestion &amp; ERP inventory ledger synchronization</span>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={() => setIsSwarmActive(!isSwarmActive)}
-            className={`badge ${isSwarmActive ? 'badge-critical' : 'badge-success'}`} 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
-          >
-            {isSwarmActive ? 'Pause Auto-Simulation' : 'Start Auto-Simulation'}
-          </button>
         </div>
       </div>
 

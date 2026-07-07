@@ -8,8 +8,6 @@ interface CaseFeedProps {
   onSelect: (id: string) => void;
   onTriggerSimulation: () => void;
   isInjecting: boolean;
-  isSwarmActive: boolean;
-  setIsSwarmActive: (val: boolean) => void;
   fetchLimit: number;
   onSetFetchLimit: (limit: number) => void;
   globalTotal: number;
@@ -22,8 +20,6 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
   onSelect,
   onTriggerSimulation,
   isInjecting,
-  isSwarmActive,
-  setIsSwarmActive,
   fetchLimit,
   onSetFetchLimit,
   globalTotal,
@@ -104,13 +100,6 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
                 Full History
               </button>
             </div>
-            <button 
-              onClick={() => setIsSwarmActive(!isSwarmActive)}
-              className={`btn-primary ${isSwarmActive ? 'btn-critical' : 'btn-success'}`}
-              style={{ padding: '8px 16px', fontSize: '0.9rem', background: isSwarmActive ? 'var(--accent-rose)' : 'var(--accent-emerald)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px' }}
-            >
-              {isSwarmActive ? 'Pause Auto-Simulation' : 'Start Auto-Simulation'}
-            </button>
             <button
               onClick={onTriggerSimulation}
               disabled={isInjecting}

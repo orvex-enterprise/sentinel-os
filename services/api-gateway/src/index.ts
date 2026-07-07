@@ -48,7 +48,7 @@ app.use('/api/v1', authMiddleware);
 app.use('/api/v1/cases', casesRouter);
 
 // Global Simulation State for Demo
-export let isSystemSimulationActive = false;
+export let isSystemSimulationActive = true;
 
 app.post('/api/v1/system/simulation', (req, res) => {
   isSystemSimulationActive = req.body.active === true;
