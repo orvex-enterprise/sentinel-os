@@ -297,7 +297,10 @@ export async function updateCaseStatus(
 }
 
 export async function createCaseFromEvent(envelope: any): Promise<string> {
-  const caseId = `c83e129b-0000-4000-8000-${Math.floor(Math.random() * 899999999000 + 100000000000)}`;
+  let caseId = envelope.correlation_id;
+  if (!caseId || typeof caseId !== 'string') {
+    caseId = `c83e129b-0000-4000-8000-${Math.floor(Math.random() * 899999999000 + 100000000000)}`;
+  }
   const sku = envelope.payload?.sku || envelope.sku || 'SKU-7821';
   
   let formattedName = envelope.name || `Anomaly Detected: ${sku}`;
