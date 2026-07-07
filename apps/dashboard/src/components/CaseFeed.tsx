@@ -109,7 +109,7 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
               className={`btn-primary ${isSwarmActive ? 'btn-critical' : 'btn-success'}`}
               style={{ padding: '8px 16px', fontSize: '0.9rem', background: isSwarmActive ? 'var(--accent-rose)' : 'var(--accent-emerald)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px' }}
             >
-              {isSwarmActive ? '🔴 Pause Auto-Simulation' : '🟢 Start Auto-Simulation'}
+              {isSwarmActive ? 'Pause Auto-Simulation' : 'Start Auto-Simulation'}
             </button>
             <button
               onClick={onTriggerSimulation}

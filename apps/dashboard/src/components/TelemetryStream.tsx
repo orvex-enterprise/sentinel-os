@@ -82,7 +82,7 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
             className={`badge ${isSwarmActive ? 'badge-critical' : 'badge-success'}`} 
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
-            {isSwarmActive ? '🔴 Pause Auto-Simulation' : '🟢 Start Auto-Simulation'}
+            {isSwarmActive ? 'Pause Auto-Simulation' : 'Start Auto-Simulation'}
           </button>
         </div>
       </div>

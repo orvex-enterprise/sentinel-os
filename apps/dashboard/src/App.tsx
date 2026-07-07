@@ -114,18 +114,36 @@ export default function App() {
   useEffect(() => {
     if (!isSwarmActive) return;
 
-    const interval = setInterval(() => {
-      dispatchSimulationEvent()
-        .then(({ caseId }) => {
-          toast.success(`Automated Demo Anomaly injected: Case ${caseId}`, { icon: '🤖' });
-          loadCases();
-        })
-        .catch((err) => {
-          console.error('[Simulation Error]', err);
-        });
-    }, 15000); // 15 seconds interval
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    return () => clearInterval(interval);
+    const triggerNext = () => {
+      // Delay between 25 and 45 seconds to keep rate low (1-2 per minute)
+      const delay = Math.floor(Math.random() * 20000) + 25000;
+      
+      timeoutId = setTimeout(() => {
+        // Only trigger if this specific browser tab is active/visible
+        // This prevents 20-30 anomalies if the user has multiple tabs open
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          dispatchSimulationEvent()
+            .then(({ caseId }) => {
+              toast.success(`Automated Demo Anomaly injected: Case ${caseId}`, { icon: '🤖' });
+              loadCases();
+            })
+            .catch((err) => {
+              console.error('[Simulation Error]', err);
+            })
+            .finally(() => {
+              triggerNext();
+            });
+        } else {
+          triggerNext();
+        }
+      }, delay);
+    };
+
+    triggerNext();
+
+    return () => clearTimeout(timeoutId);
   }, [isSwarmActive, loadCases]);
 
   const handleTriggerSimulation = async () => {

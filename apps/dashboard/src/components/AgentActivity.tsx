@@ -87,9 +87,9 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
           >
             {isSwarmActive ? (
-              <>🔴 Pause Auto-Simulation</>
+              <>Pause Auto-Simulation</>
             ) : (
-              <>🟢 Start Auto-Simulation</>
+              <>Start Auto-Simulation</>
             )}
           </button>
         </div>
