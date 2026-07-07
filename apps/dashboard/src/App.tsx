@@ -7,6 +7,7 @@ import { ExecutionStatus } from './components/ExecutionStatus';
 import { AgentActivity } from './components/AgentActivity';
 import { TelemetryStream } from './components/TelemetryStream';
 import { Shield, Radio, RefreshCw } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const [cases, setCases] = useState<CaseItem[]>([]);
@@ -16,18 +17,20 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'audit' | 'activity' | 'telemetry'>('overview');
+  const [fetchLimit, setFetchLimit] = useState(20);
+  const [globalTotal, setGlobalTotal] = useState(0);
+  const [globalPending, setGlobalPending] = useState(0);
 
   const loadCases = useCallback(async () => {
     try {
-      const list = await fetchCases();
-      setCases(list);
-      if (!selectedId && list.length > 0) {
-        setSelectedId(list[0].id);
-      }
+      const result = await fetchCases(fetchLimit);
+      setCases(result.cases);
+      setGlobalTotal(result.total);
+      setGlobalPending(result.pendingTotal);
     } catch (err) {
       console.error('[App] Failed to load cases:', err);
     }
-  }, [selectedId]);
+  }, [fetchLimit]);
 
   const loadDetail = useCallback(async (id: string) => {
     try {
@@ -52,6 +55,19 @@ export default function App() {
     const ws = connectWebSocket((data) => {
       console.log('[WebSocket] State update received:', data);
       loadCases();
+      if (data.newStatus === 'DETECTED') {
+        toast.error(`Anomaly Detected: Case ${data.caseId}`, { icon: '🚨' });
+      } else if (data.newStatus === 'AWAITING_APPROVAL') {
+        toast.custom((t) => (
+          <div className="glass-panel" style={{ padding: '12px', background: 'var(--bg-tertiary)', borderLeft: '4px solid var(--accent-amber)' }}>
+            <strong>Action Required</strong><br />
+            <span style={{ fontSize: '0.85rem' }}>Plan generated for {data.caseId}</span>
+          </div>
+        ));
+      } else if (data.newStatus === 'CLOSED_SUCCESS') {
+        toast.success(`Execution successful: ${data.caseId}`, { icon: '✅' });
+      }
+
       if (selectedId && (data.caseId === selectedId || !selectedId)) {
         loadDetail(selectedId || data.caseId);
       }
@@ -106,25 +122,26 @@ export default function App() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }} className="animate-fade-in">
+      <Toaster position="bottom-right" toastOptions={{ style: { background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' } }} />
       {/* Top Navigation Bar */}
-      <header style={{ height: '64px', background: 'rgba(11, 15, 25, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: 10 }}>
+      <header style={{ height: '64px', background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-violet))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(6, 182, 212, 0.4)' }}>
-            <Shield size={20} color="#fff" />
+          <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Shield size={20} color="var(--bg-primary)" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.25rem', letterSpacing: '-0.03em', background: 'linear-gradient(90deg, #fff, var(--text-secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              SENTINEL <span style={{ fontWeight: 300, color: 'var(--accent-cyan)' }}>OS</span>
+            <h1 style={{ fontSize: '1.25rem', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              SENTINEL <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>OS</span>
             </h1>
             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Autonomous Enterprise Mission Control</span>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '9999px', border: '1px solid var(--border-glass)', fontSize: '0.8rem' }}>
-            <Radio size={14} color={isConnected ? 'var(--accent-emerald)' : 'var(--accent-rose)'} className={isConnected ? 'animate-pulse-glow' : ''} />
-            <span>{isConnected ? 'Live WMS Stream Connected' : 'Stream Offline / Polling'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'var(--bg-secondary)', borderRadius: '9999px', border: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
+            <Radio size={14} color={isConnected ? 'var(--text-primary)' : 'var(--text-muted)'} className={isConnected ? 'animate-pulse-glow' : ''} />
+            <span style={{ color: isConnected ? 'var(--text-primary)' : 'var(--text-muted)' }}>{isConnected ? 'Live WMS Stream Connected' : 'Stream Offline / Polling'}</span>
           </div>
 
           <button
@@ -140,63 +157,87 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', padding: '20px', overflow: 'hidden' }}>
-        {/* Left Sidebar */}
-        <CaseFeed
-          cases={cases}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onTriggerSimulation={handleTriggerSimulation}
-          isSimulating={isSimulating}
-        />
-
-        {/* Right Main Area */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', paddingRight: '4px' }}>
-          <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border-glass)', paddingBottom: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setActiveTab('overview')}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'overview' ? 'var(--accent-cyan)' : 'transparent', color: activeTab === 'overview' ? '#fff' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-            >
-              Overview &amp; RCA
-            </button>
-            <button
-              onClick={() => setActiveTab('activity')}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'activity' ? 'var(--accent-violet)' : 'transparent', color: activeTab === 'activity' ? '#fff' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-            >
-              Agent Activity
-            </button>
-            <button
-              onClick={() => setActiveTab('telemetry')}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'telemetry' ? 'var(--accent-emerald)' : 'transparent', color: activeTab === 'telemetry' ? '#fff' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-            >
-              Telemetry Stream
-            </button>
-            <button
-              onClick={() => setActiveTab('audit')}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'audit' ? 'var(--accent-amber)' : 'transparent', color: activeTab === 'audit' ? '#fff' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-            >
-              Audit Trail ({caseDetail?.auditTrail?.length || 0})
-            </button>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {!selectedId ? (
+          // Overview Mode
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <CaseFeed
+              cases={cases}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onTriggerSimulation={handleTriggerSimulation}
+              isSimulating={isSimulating}
+              fetchLimit={fetchLimit}
+              onSetFetchLimit={setFetchLimit}
+              globalTotal={globalTotal}
+              globalPending={globalPending}
+            />
           </div>
+        ) : (
+          // Deep Dive Mode
+          <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', padding: '24px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
+              <button
+                onClick={() => setSelectedId(null)}
+                className="btn-primary"
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+              >
+                &larr; Back to Overview
+              </button>
+              
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid', borderColor: activeTab === 'overview' ? 'var(--border-subtle)' : 'transparent', background: activeTab === 'overview' ? 'var(--bg-tertiary)' : 'transparent', color: activeTab === 'overview' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Overview &amp; RCA
+                </button>
+                <button
+                  onClick={() => setActiveTab('activity')}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid', borderColor: activeTab === 'activity' ? 'var(--border-subtle)' : 'transparent', background: activeTab === 'activity' ? 'var(--bg-tertiary)' : 'transparent', color: activeTab === 'activity' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Agent Activity
+                </button>
+                <button
+                  onClick={() => setActiveTab('telemetry')}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid', borderColor: activeTab === 'telemetry' ? 'var(--border-subtle)' : 'transparent', background: activeTab === 'telemetry' ? 'var(--bg-tertiary)' : 'transparent', color: activeTab === 'telemetry' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Telemetry Stream
+                </button>
+                <button
+                  onClick={() => setActiveTab('audit')}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid', borderColor: activeTab === 'audit' ? 'var(--border-subtle)' : 'transparent', background: activeTab === 'audit' ? 'var(--bg-tertiary)' : 'transparent', color: activeTab === 'audit' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Audit Trail ({caseDetail?.auditTrail?.length || 0})
+                </button>
+              </div>
+            </div>
 
-          {activeTab === 'overview' ? (
-            <>
-              <CaseDetail
-                caseData={caseDetail}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                isProcessing={isProcessing}
-              />
-              {caseDetail && <ExecutionStatus status={caseDetail.status} version={caseDetail.version} />}
-            </>
-          ) : activeTab === 'activity' ? (
-            <AgentActivity currentStatus={caseDetail?.status} sku={caseDetail?.sku} />
-          ) : activeTab === 'telemetry' ? (
-            <TelemetryStream />
-          ) : (
-            <AuditLog auditTrail={caseDetail?.auditTrail} />
-          )}
-        </div>
+            {activeTab === 'overview' ? (
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <CaseDetail
+                  caseData={caseDetail}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  isProcessing={isProcessing}
+                />
+                {caseDetail && <ExecutionStatus status={caseDetail.status} version={caseDetail.version} />}
+              </div>
+            ) : activeTab === 'activity' ? (
+              <div className="animate-fade-in">
+                <AgentActivity currentStatus={caseDetail?.status} sku={caseDetail?.sku} />
+              </div>
+            ) : activeTab === 'telemetry' ? (
+              <div className="animate-fade-in">
+                <TelemetryStream activeSku={caseDetail?.sku} activeZScore={caseDetail?.zScore} />
+              </div>
+            ) : (
+              <div className="animate-fade-in">
+                <AuditLog auditTrail={caseDetail?.auditTrail || []} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

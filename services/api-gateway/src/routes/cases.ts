@@ -23,6 +23,7 @@ casesRouter.get('/', async (req: AuthenticatedRequest, res: Response) => {
       data: result.cases,
       pagination: {
         total: result.total,
+        pendingTotal: result.pendingTotal,
         limit,
         offset,
       },

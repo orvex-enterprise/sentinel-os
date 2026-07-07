@@ -54,6 +54,7 @@ services:
       DATABASE_URL: postgres://sentinel:sentinel_secret@sentinel-postgres:5432/sentinel_db
       REDIS_URL: redis://:redis_secret@sentinel-redis:6379
       API_TOKEN_LIVE: tok_live_demo_8849201948210
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "4000:4000"
     depends_on:

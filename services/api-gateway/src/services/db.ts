@@ -41,77 +41,7 @@ interface MemoryCase {
 
 const memoryStore: Map<string, MemoryCase> = new Map();
 
-// Pre-populate with baseline case from API Spec §23.1
-const seedCaseId = 'c83e129b-8421-4d38-9812-32a1f0192831';
-memoryStore.set(seedCaseId, {
-  id: seedCaseId,
-  domain: 'INVENTORY',
-  title: 'Stockout Risk Detected: SKU-9942',
-  status: 'PENDING_APPROVAL',
-  severity: 'CRITICAL',
-  sku: 'SKU-9942',
-  zScore: 3.84,
-  rootCauseSummary: 'Unexpected demand spike on SKU-9942 combined with 5-day supplier delay from Apex Logistics.',
-  executionPlan: {
-    planId: 'plan_001',
-    caseId: seedCaseId,
-    generatedBy: 'agent:plan:v1',
-    timestamp: new Date().toISOString(),
-    actions: [
-      {
-        actionKey: 'act_expedite_01',
-        actionType: 'PO_EXPEDITE',
-        description: 'Expedite PO-4491 air freight',
-        targetSku: 'SKU-9942',
-        parameters: { poId: 'PO-4491', expediteFeeUsd: 450 },
-        riskLevel: 'MEDIUM',
-        expectedOutcome: 'Delivery advanced by 3 days',
-        requiresHumanApproval: true,
-      },
-      {
-        actionKey: 'act_reallocate_02',
-        actionType: 'SAFETY_STOCK_ADJUST',
-        description: 'Reallocate 50 units from Warehouse Beta',
-        targetSku: 'SKU-9942',
-        parameters: { sourceWarehouse: 'WH-002', qty: 50 },
-        riskLevel: 'LOW',
-        expectedOutcome: 'Safety stock buffered',
-        requiresHumanApproval: false,
-      },
-    ],
-    contingencyStrategy: 'Reallocate stock from Warehouse Beta',
-    estimatedFinancialImpactUsd: 4250.00,
-  },
-  approvalToken: 'tok_live_8849201948210',
-  approvedBy: null,
-  approvedAt: null,
-  rejectionReason: null,
-  version: 1,
-  createdAt: '2026-07-03T20:00:00Z',
-  updatedAt: '2026-07-03T20:15:00Z',
-  auditLogs: [
-    {
-      audit_id: '11111111-0000-0000-0000-000000000001',
-      case_id: seedCaseId,
-      actor: 'agent:detect:v1',
-      action_performed: 'DETECTED_ANOMALY',
-      previous_status: undefined,
-      new_status: 'INVESTIGATING',
-      timestamp: '2026-07-03T20:01:00Z',
-      details: { zScore: 3.84 },
-    },
-    {
-      audit_id: '11111111-0000-0000-0000-000000000002',
-      case_id: seedCaseId,
-      actor: 'agent:plan:v1',
-      action_performed: 'GENERATED_PLAN',
-      previous_status: 'INVESTIGATING',
-      new_status: 'PENDING_APPROVAL',
-      timestamp: '2026-07-03T20:15:00Z',
-      details: { planId: 'plan_001', estimatedFinancialImpactUsd: 4250.00 },
-    },
-  ],
-});
+// Seed case removed to prevent static case from being stuck at the top
 
 let isPgAvailable: boolean | null = null;
 
@@ -129,31 +59,32 @@ async function checkPg(): Promise<boolean> {
   return isPgAvailable;
 }
 
-export async function getCases(domain?: string, status?: string, limit = 20, offset = 0): Promise<{ cases: any[]; total: number }> {
+export async function getCases(domain?: string, status?: string, limit = 20, offset = 0): Promise<{ cases: any[]; total: number; pendingTotal: number }> {
   const usePg = await checkPg();
   if (usePg) {
     try {
-      let query = 'SELECT * FROM cases WHERE 1=1';
+      let query = 'SELECT c.*, b.affected_entities->0->>\'title\' AS custom_title FROM cases c JOIN business_cases b ON c.id = b.id WHERE 1=1';
       const params: any[] = [];
       if (domain) {
         params.push(domain);
-        query += ` AND domain = $${params.length}`;
+        query += ` AND c.domain = $${params.length}`;
       }
       if (status) {
         params.push(status);
-        query += ` AND status = $${params.length}`;
+        query += ` AND c.status = $${params.length}`;
       }
-      query += ` ORDER BY updated_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-      const countQuery = 'SELECT count(*) FROM cases WHERE 1=1' + (domain ? ` AND domain = '${domain}'` : '') + (status ? ` AND status = '${status}'` : '');
+      query += ` ORDER BY c.updated_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      const countQuery = 'SELECT count(*) FROM cases c WHERE 1=1' + (domain ? ` AND c.domain = '${domain}'` : '') + (status ? ` AND c.status = '${status}'` : '');
       
       const res = await dbPool.query(query, [...params, limit, offset]);
       const countRes = await dbPool.query(countQuery);
+      const pendingRes = await dbPool.query("SELECT count(*) FROM cases WHERE status IN ('AWAITING_APPROVAL')");
       
       return {
         cases: res.rows.map((row) => ({
           id: row.id,
           domain: row.domain,
-          title: row.title,
+          title: row.custom_title || row.title,
           status: row.status,
           severity: row.severity,
           sku: row.sku,
@@ -161,6 +92,7 @@ export async function getCases(domain?: string, status?: string, limit = 20, off
           updatedAt: row.updated_at,
         })),
         total: parseInt(countRes.rows[0].count, 10),
+        pendingTotal: parseInt(pendingRes.rows[0].count, 10),
       };
     } catch (err: any) {
       console.error('[Database] Query failed in getCases, falling back to in-memory store:', err.message);
@@ -173,6 +105,7 @@ export async function getCases(domain?: string, status?: string, limit = 20, off
   if (domain) list = list.filter((c) => c.domain === domain);
   if (status) list = list.filter((c) => c.status === status);
   const total = list.length;
+  const pendingTotal = list.filter((c) => c.status === 'PENDING_APPROVAL' || c.status === 'AWAITING_APPROVAL').length;
   const sliced = list.slice(offset, offset + limit).map((c) => ({
     id: c.id,
     domain: c.domain,
@@ -183,14 +116,14 @@ export async function getCases(domain?: string, status?: string, limit = 20, off
     zScore: c.zScore,
     updatedAt: c.updatedAt,
   }));
-  return { cases: sliced, total };
+  return { cases: sliced, total, pendingTotal };
 }
 
 export async function getCaseById(id: string): Promise<any | null> {
   const usePg = await checkPg();
   if (usePg && isUuid(id)) {
     try {
-      const res = await dbPool.query('SELECT * FROM cases WHERE id = $1', [id]);
+      const res = await dbPool.query('SELECT c.*, b.affected_entities->0->>\'title\' AS custom_title FROM cases c JOIN business_cases b ON c.id = b.id WHERE c.id = $1', [id]);
       if (res.rows.length === 0) return null;
       const row = res.rows[0];
       
@@ -200,13 +133,13 @@ export async function getCaseById(id: string): Promise<any | null> {
       return {
         id: row.id,
         domain: row.domain,
-        title: row.title,
+        title: row.custom_title || row.title,
         status: row.status,
         severity: row.severity,
         sku: row.sku,
         zScore: parseFloat(row.z_score || '0'),
         rootCauseSummary: row.root_cause_summary,
-        executionPlan: row.execution_plan,
+        executionPlan: row.execution_plan ? (row.execution_plan.evidence || row.execution_plan) : null,
         approvalToken: row.approval_token,
         approvedBy: row.approved_by,
         approvedAt: row.approved_at,
@@ -284,7 +217,7 @@ export async function updateCaseStatus(
         const decisionId = `DEC-${Math.floor(Math.random() * 89999 + 10000)}`;
         await dbPool.query(
           `INSERT INTO decisions (public_id, case_id, plan_version, recommendation_summary, confidence_score, risk_score, reasoning_summary, evidence, alternative_decisions, status, created_by, schema_version)
-           VALUES ($1, $2, $3, $4, 0.95, 0.35, $5, $6::jsonb, $7::jsonb, 'PROPOSED', $8, '1.0')
+           VALUES ($1, $2, $3, $4, 0.95, 0.35, $5, $6::jsonb, $7::jsonb, 'PENDING', $8, '1.0')
            ON CONFLICT (case_id, plan_version) DO UPDATE SET
              recommendation_summary = EXCLUDED.recommendation_summary,
              evidence = EXCLUDED.evidence`,
@@ -367,16 +300,52 @@ export async function createCaseFromEvent(envelope: any): Promise<string> {
   const caseId = `c83e129b-0000-4000-8000-${Math.floor(Math.random() * 899999999000 + 100000000000)}`;
   const sku = envelope.payload?.sku || envelope.sku || 'SKU-7821';
   
+  let formattedName = envelope.name || `Anomaly Detected: ${sku}`;
+  if (formattedName.startsWith('SCEN-')) {
+    // Convert "SCEN-001-STOCKOUT-RISK" to "Stockout Risk"
+    formattedName = formattedName.replace(/^SCEN-\d+-/, '').replace(/-/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
+  }
+  const eventTitle = formattedName;
+  
   const memCase: MemoryCase = {
     id: caseId,
     domain: envelope.domain || 'INVENTORY',
-    title: `Anomaly Detected: ${sku}`,
+    title: eventTitle,
     status: 'DETECTED',
     severity: 'HIGH',
     sku,
     zScore: envelope.payload?.z_score || 2.85,
-    rootCauseSummary: null,
-    executionPlan: null,
+    rootCauseSummary: envelope.payload?.root_cause_hint || 'Simulated Anomaly: Sudden 35% spike in demand detected at regional distribution center, causing imminent stockout risk before the next scheduled supplier delivery.',
+    executionPlan: {
+      planId: `plan_${Math.random().toString(36).substring(7)}`,
+      caseId: caseId,
+      generatedBy: 'agent:plan:v1',
+      timestamp: new Date().toISOString(),
+      actions: [
+        {
+          actionKey: `act_${Math.random().toString(36).substring(7)}`,
+          actionType: 'PO_EXPEDITE',
+          description: `Expedite emergency air freight shipment for ${sku}`,
+          targetSku: sku,
+          parameters: { poId: `PO-${Math.floor(Math.random() * 9000 + 1000)}`, expediteFeeUsd: Math.floor(Math.random() * 500 + 100) },
+          riskLevel: Math.random() > 0.5 ? 'MEDIUM' : 'HIGH',
+          expectedOutcome: `Advance delivery arrival by ${Math.floor(Math.random() * 4 + 1)} days`,
+          requiresHumanApproval: true,
+        },
+        {
+          actionKey: `act_${Math.random().toString(36).substring(7)}`,
+          actionType: 'SAFETY_STOCK_ADJUST',
+          description: `Reallocate buffer stock for ${sku} from secondary warehouse`,
+          targetSku: sku,
+          parameters: { sourceWarehouse: Math.random() > 0.5 ? 'WH-002' : 'WH-003', qty: envelope.payload?.metrics?.daily_demand || 25 },
+          riskLevel: 'LOW',
+          expectedOutcome: 'Restore safety stock margin',
+          requiresHumanApproval: false,
+        }
+      ],
+      contingencyStrategy: 'If air freight fails, trigger automated cross-docking from regional hub.',
+      estimatedFinancialImpactUsd: envelope.payload?.metrics?.daily_demand ? envelope.payload.metrics.daily_demand * 125 : Math.floor(Math.random() * 5000 + 1000),
+    },
     approvalToken: `tok_${Math.random().toString(36).substring(7)}`,
     approvedBy: null,
     approvedAt: null,
@@ -405,15 +374,22 @@ export async function createCaseFromEvent(envelope: any): Promise<string> {
     try {
       const publicId = `CASE-${Math.floor(Math.random() * 89999 + 10000)}`;
       await dbPool.query(
-        `INSERT INTO business_cases (id, public_id, warehouse_id, domain, status, anomaly_type, severity, detection_confidence, schema_version, affected_entities, baseline_delta, approval_comment, created_at, updated_at)
-         VALUES ($1, $2, '11111111-1111-1111-1111-111111111111', $3::domain_type, 'DETECTED', 'STOCKOUT_RISK', 'HIGH', 0.95, '1.0', $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        [caseId, publicId, memCase.domain, JSON.stringify([{ sku }]), memCase.zScore, memCase.approvalToken]
+        `INSERT INTO business_cases (id, public_id, warehouse_id, domain, status, anomaly_type, severity, detection_confidence, schema_version, affected_entities, baseline_delta, approval_comment, root_cause_hypothesis, created_at, updated_at)
+         VALUES ($1, $2, '11111111-1111-1111-1111-111111111111', $3::domain_type, 'DETECTED', 'STOCKOUT_RISK', 'HIGH', 0.95, '1.0', $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [caseId, publicId, memCase.domain, JSON.stringify([{ sku, title: eventTitle }]), memCase.zScore, memCase.approvalToken, memCase.rootCauseSummary]
+      );
+      // Insert a decision record so the execution_plan view is not null
+      await dbPool.query(
+        `INSERT INTO decisions (public_id, case_id, plan_version, recommendation_summary, confidence_score, risk_score, reasoning_summary, evidence, status, created_by, schema_version)
+         VALUES ($1, $2, 1, 'Auto-generated plan', 0.9, 0.5, 'Generated by simulator', $3, 'PENDING', 'agent:plan:v1', '1.0')`,
+        [`DEC-${Math.floor(Math.random() * 89999 + 10000)}`, caseId, JSON.stringify(memCase.executionPlan)]
       );
       await dbPool.query(
         `INSERT INTO audit_logs (case_id, event_type, actor, actor_type, before_snapshot, after_snapshot, correlation_id)
          VALUES ($1, 'CASE_CREATED_FROM_EVENT', $2, 'SYSTEM', '{}', $3, uuid_generate_v4())`,
         [caseId, envelope.source_system || 'agent:monitor:v1', JSON.stringify({ status: 'DETECTED', sku })]
       );
+      
       console.log(`[Database] Inserted case ${caseId} (${publicId}) into PostgreSQL.`);
     } catch (err: any) {
       console.error(`[Database] Failed to insert case ${caseId} into PostgreSQL:`, err.message);

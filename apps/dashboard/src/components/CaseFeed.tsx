@@ -8,6 +8,10 @@ interface CaseFeedProps {
   onSelect: (id: string) => void;
   onTriggerSimulation: () => void;
   isSimulating: boolean;
+  fetchLimit: number;
+  onSetFetchLimit: (limit: number) => void;
+  globalTotal: number;
+  globalPending: number;
 }
 
 export const CaseFeed: React.FC<CaseFeedProps> = ({
@@ -16,6 +20,10 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
   onSelect,
   onTriggerSimulation,
   isSimulating,
+  fetchLimit,
+  onSetFetchLimit,
+  globalTotal,
+  globalPending,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -54,109 +62,152 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
   };
 
   return (
-    <div className="glass-panel" style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Layers size={22} color="var(--accent-cyan)" />
-          <h2 style={{ fontSize: '1.25rem' }}>Active Cases</h2>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', padding: '12px 24px', gap: '24px', height: '100%' }}>
+      {/* KPI Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid var(--text-primary)' }}>
+          <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Total Active Anomalies</h3>
+          <p style={{ fontSize: '2rem', color: 'var(--text-primary)', fontWeight: 600 }}>{globalTotal}</p>
         </div>
-        <button
-          onClick={onTriggerSimulation}
-          disabled={isSimulating}
-          className="btn-primary"
-          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-        >
-          {isSimulating ? 'Injecting...' : '+ Inject Anomaly'}
-        </button>
-      </div>
-
-      {/* Search & Filter */}
-      <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            placeholder="Search SKU, Title, or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 10px 10px 36px',
-              background: 'rgba(17, 24, 39, 0.6)',
-              border: '1px solid var(--border-glass)',
-              borderRadius: '8px',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem',
-              outline: 'none',
-            }}
-          />
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid var(--accent-rose)' }}>
+          <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Pending Approvals</h3>
+          <p style={{ fontSize: '2rem', color: 'var(--text-primary)', fontWeight: 600 }}>{globalPending}</p>
         </div>
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {['ALL', 'PENDING_APPROVAL', 'EXECUTING', 'RESOLVED'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                background: statusFilter === status ? 'var(--accent-cyan)' : 'rgba(255, 255, 255, 0.05)',
-                color: statusFilter === status ? '#fff' : 'var(--text-secondary)',
-                transition: 'all 0.2s',
-              }}
-            >
-              {status === 'PENDING_APPROVAL' ? 'APPROVALS' : status}
-            </button>
-          ))}
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid var(--text-secondary)' }}>
+          <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>System Status</h3>
+          <p style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '8px' }}>Live Monitoring <span className="animate-pulse-glow" style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--text-primary)', borderRadius: '50%', marginLeft: '8px' }}></span></p>
         </div>
       </div>
 
-      {/* Case List */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
-            <Activity size={36} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-            <p style={{ fontSize: '0.9rem' }}>No matching business cases</p>
+      <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', gap: '20px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Layers size={22} color="var(--text-primary)" />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 500 }}>Active Cases Overview</h2>
           </div>
-        ) : (
-          filtered.map((c) => {
-            const isSelected = c.id === selectedId;
-            return (
-              <div
-                key={c.id}
-                onClick={() => onSelect(c.id)}
-                className="glass-card"
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: 'var(--bg-tertiary)', borderRadius: '6px', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+              <button
+                onClick={() => onSetFetchLimit(20)}
+                style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', background: fetchLimit === 20 ? 'var(--text-primary)' : 'transparent', color: fetchLimit === 20 ? 'var(--bg-primary)' : 'var(--text-secondary)', transition: 'all 0.2s', border: 'none', borderRight: '1px solid var(--border-subtle)' }}
+              >
+                Top 20
+              </button>
+              <button
+                onClick={() => onSetFetchLimit(1000)}
+                style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', background: fetchLimit === 1000 ? 'var(--text-primary)' : 'transparent', color: fetchLimit === 1000 ? 'var(--bg-primary)' : 'var(--text-secondary)', transition: 'all 0.2s', border: 'none' }}
+              >
+                Full History
+              </button>
+            </div>
+            <button
+              onClick={onTriggerSimulation}
+              disabled={isSimulating}
+              className="btn-primary"
+              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+            >
+              {isSimulating ? 'Injecting Anomaly...' : '+ Inject Demo Anomaly'}
+            </button>
+          </div>
+        </div>
+
+        {/* Search & Filter */}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
+            <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Search SKU, Title, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 10px 10px 36px',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '6px',
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+            {['ALL', 'PENDING_APPROVAL', 'EXECUTING', 'RESOLVED'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
                 style={{
-                  padding: '16px',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  border: '1px solid',
+                  borderColor: statusFilter === status ? 'var(--text-primary)' : 'var(--border-subtle)',
                   cursor: 'pointer',
-                  borderLeft: isSelected ? '4px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.08)',
-                  background: isSelected ? 'rgba(6, 182, 212, 0.12)' : undefined,
+                  background: statusFilter === status ? 'var(--text-primary)' : 'var(--bg-tertiary)',
+                  color: statusFilter === status ? 'var(--bg-primary)' : 'var(--text-secondary)',
+                  transition: 'all 0.2s',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    {c.sku}
-                  </span>
-                  {getStatusBadge(c.status)}
+                {status === 'PENDING_APPROVAL' ? 'APPROVALS' : status}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Case List - Full Width Table Style */}
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {filtered.length === 0 ? (
+            <div className="animate-fade-in" style={{ textAlign: 'center', padding: '60px 10px', color: 'var(--text-muted)' }}>
+              <Activity size={48} style={{ margin: '0 auto 16px', opacity: 0.4 }} />
+              <p style={{ fontSize: '1.1rem' }}>No anomalies detected matching your criteria.</p>
+            </div>
+          ) : (
+            filtered.map((c, index) => {
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => onSelect(c.id)}
+                  className="glass-card animate-slide-up"
+                  style={{
+                    padding: '20px 24px',
+                    cursor: 'pointer',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 3fr 1fr 1fr auto',
+                    gap: '16px',
+                    alignItems: 'center',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-tertiary)',
+                    animationDelay: `${index * 0.05}s`,
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{c.sku}</span>
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '1.05rem', margin: 0, color: 'var(--text-primary)', fontWeight: 500 }}>{c.title}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                      <AlertTriangle size={14} color="var(--accent-rose)" /> Z-Score: {c.zScore} | {new Date(c.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div>{getStatusBadge(c.status)}</div>
+                  <div>
+                    <span className="badge badge-critical" style={{ background: 'transparent', border: '1px solid' }}>{c.severity}</span>
+                  </div>
+                  <div>
+                    <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--text-primary)' }}>
+                      Deep Dive &rarr;
+                    </button>
+                  </div>
                 </div>
-                <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', color: 'var(--text-primary)' }}>
-                  {c.title}
-                </h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <AlertTriangle size={14} color="var(--accent-rose)" /> Z: {c.zScore}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}>
-                    <Clock size={12} /> {new Date(c.updatedAt).toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

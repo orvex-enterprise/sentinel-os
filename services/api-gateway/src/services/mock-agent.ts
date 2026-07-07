@@ -1,25 +1,27 @@
-import { updateCaseStatus } from './db';
+import { updateCaseStatus, getCaseById } from './db';
 import { broadcastCaseStateUpdate } from '../ws/hub';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const apiKey = process.env.GEMINI_API_KEY;
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 /**
- * Authoritative Mock Agent Responder (§15.1, task.md Phase 3)
- * Simulates LangGraph orchestration node execution when running standalone or in integration tests
+ * Authoritative Mock/LLM Agent Responder
+ * Uses Gemini if GEMINI_API_KEY is present, else falls back to mock logic.
  */
 export class MockAgentResponder {
-  /**
-   * Called when operator approves an execution plan via POST /api/v1/cases/:id/approve
-   * Simulates execute -> record -> improve nodes per §22.2
-   */
   public async onPlanApproved(caseId: string, approvedBy: string, comment?: string): Promise<void> {
-    console.log(`[Mock Agent] Plan approved for case ${caseId} by ${approvedBy}. Starting execution simulation...`);
+    console.log(`[Agent] Plan approved for case ${caseId} by ${approvedBy}. Starting execution...`);
 
-    // Step 1: Transition to EXECUTING (after 1000ms delay simulating worker pickup)
     setTimeout(async () => {
       try {
-        const updated = await updateCaseStatus(caseId, 'EXECUTING', {
+        const caseData = await getCaseById(caseId);
+        if (!caseData || !caseData.executionPlan || !caseData.executionPlan.actions) return;
+
+        let updated = await updateCaseStatus(caseId, 'EXECUTING', {
           actor: 'agent:execute:v1',
           actionPerformed: 'DISPATCHED_EXECUTION_PLAN',
-          comment: `Executing actions for case ${caseId}`,
+          comment: `Executing ${caseData.executionPlan.actions.length} actions for case ${caseId}`,
         });
 
         if (updated) {
@@ -30,16 +32,36 @@ export class MockAgentResponder {
             nodeCompleted: 'execute_start',
             executionPlanSummary: updated.executionPlan,
           });
-          console.log(`[Mock Agent] Case ${caseId} transitioned to EXECUTING.`);
         }
 
-        // Step 2: Transition to CLOSED_SUCCESS (after another 2000ms simulating tool I/O)
+        // Loop through actions to simulate agentic execution loop
+        for (const action of caseData.executionPlan.actions) {
+          // Simulate action delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          updated = await updateCaseStatus(caseId, 'EXECUTING', {
+            actor: 'agent:execute:v1',
+            actionPerformed: 'EXECUTED_ACTION',
+            comment: `API Call Sent: [${action.actionType}] ${action.description} -> Expected: ${action.expectedOutcome}`,
+          });
+
+          if (updated) {
+            broadcastCaseStateUpdate({
+              caseId,
+              previousStatus: 'EXECUTING',
+              newStatus: 'EXECUTING',
+              nodeCompleted: 'execute_step',
+            });
+          }
+        }
+
+        // Final completion step
         setTimeout(async () => {
           try {
             const resolved = await updateCaseStatus(caseId, 'CLOSED_SUCCESS', {
               actor: 'agent:record:v1',
               actionPerformed: 'VERIFIED_EXECUTION_SUCCESS',
-              comment: `All action items executed and verified. Restored inventory SLA.`,
+              comment: `All action items executed and verified. Restored SLA.`,
             });
 
             if (resolved) {
@@ -50,81 +72,94 @@ export class MockAgentResponder {
                 nodeCompleted: 'record',
                 executionPlanSummary: resolved.executionPlan,
               });
-              console.log(`[Mock Agent] Case ${caseId} transitioned to CLOSED_SUCCESS.`);
+              console.log(`[Agent] Case ${caseId} transitioned to CLOSED_SUCCESS.`);
             }
           } catch (err: any) {
-            console.error(`[Mock Agent] Error resolving case ${caseId}:`, err.message);
+            console.error(`[Agent] Error resolving case ${caseId}:`, err.message);
           }
-        }, 2000);
+        }, 1500);
       } catch (err: any) {
-        console.error(`[Mock Agent] Error executing case ${caseId}:`, err.message);
+        console.error(`[Agent] Error executing case ${caseId}:`, err.message);
       }
     }, 1000);
   }
 
-  /**
-   * Called when a new anomaly event arrives via Redis stream or POST /api/v1/cases/:id/events
-   * Simulates detect -> investigate -> plan nodes per §22.2
-   */
   public async onEventIngested(caseId: string, sku: string): Promise<void> {
-    console.log(`[Mock Agent] Event ingested for SKU ${sku} (Case: ${caseId}). Simulating investigate -> plan...`);
+    console.log(`[Agent] Event ingested for SKU ${sku} (Case: ${caseId}).`);
 
     setTimeout(async () => {
       try {
-        const rca = `### Root Cause Identified: Supplier Shipment Delay\n\n**Telemetry Analysis:** WMS sensors detected an unexpected drop in inbound receiving rates for **${sku}**. Historical transit data indicates a **94.2% probability** of stockout within 48 hours without intervention.\n\n* **Primary Factor:** Carrier bottleneck at regional sorting facility.\n* **Secondary Factor:** Demand spike (+18% above seasonal baseline).\n\n**Recommended Action:** Execute emergency PO expedite and re-route safety stock from secondary distribution center.`;
+        const caseData = await getCaseById(caseId);
+        if (!caseData) return;
 
-        const plan = {
+        let rca = caseData.rootCauseSummary || `### Root Cause Identified: Supplier Shipment Delay\n\n**Telemetry Analysis:** WMS sensors detected an unexpected drop in inbound receiving rates for **${sku}**.`;
+        let plan = caseData.executionPlan || {
           planId: `PLAN-${Math.floor(1000 + Math.random() * 9000)}`,
           caseId,
           generatedBy: 'agent:plan:v1',
           timestamp: new Date().toISOString(),
           actions: [
-            {
-              actionKey: `act_${sku}_expedite`,
-              actionType: 'PO_EXPEDITE',
-              description: `Expedite emergency replenishment order for ${sku}`,
-              targetSku: sku,
-              parameters: { poId: `PO-${Math.floor(1000 + Math.random() * 9000)}`, expediteFeeUsd: 450 },
-              riskLevel: 'MEDIUM',
-              expectedOutcome: 'Delivery advanced by 3 days',
-              requiresHumanApproval: true,
-            },
-            {
-              actionKey: `act_${sku}_reallocate`,
-              actionType: 'SAFETY_STOCK_ADJUST',
-              description: `Re-route backup inventory from Regional Hub Beta for ${sku}`,
-              targetSku: sku,
-              parameters: { sourceWarehouse: 'WH-002', qty: 50 },
-              riskLevel: 'LOW',
-              expectedOutcome: 'Safety stock buffered',
-              requiresHumanApproval: false,
-            },
+            { actionKey: 'ACT-001', actionType: 'REALLOCATE', description: 'Reallocate 50 units from primary hub', riskLevel: 'LOW', expectedOutcome: 'Restores SLA instantly', requiresHumanApproval: false },
+            { actionKey: 'ACT-002', actionType: 'EXPEDITE', description: 'Expedite incoming PO via air freight', riskLevel: 'MEDIUM', expectedOutcome: 'Replenishes buffer in 24h', requiresHumanApproval: true },
           ],
           contingencyStrategy: 'Reallocate stock from secondary distribution center',
           estimatedFinancialImpactUsd: 4250.00,
         };
 
-        // Step 1: Transition DETECTED -> INVESTIGATING
+        if (genAI) {
+          try {
+            console.log(`[Agent] Calling Gemini 1.5 Flash for Case ${caseId}...`);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
+            const prompt = `You are an autonomous supply chain agent. An anomaly has been detected for SKU ${sku}. 
+The statistical Z-Score indicates a ${caseData.severity} severity issue.
+Generate a JSON response containing two fields:
+1. "rootCauseSummary": A markdown formatted string explaining a realistic, highly technical root cause (e.g. ship stuck at port, hurricane, local strike). Make it sound professional and data-driven.
+2. "executionPlan": An object containing:
+   - "actions": an array of exactly 3 actionable steps. Each object must have: actionKey (string), actionType (string), description (string), riskLevel ('LOW'|'MEDIUM'|'HIGH'), expectedOutcome (string), requiresHumanApproval (boolean).
+   - "contingencyStrategy": a string describing the backup plan.
+   - "estimatedFinancialImpactUsd": a realistic number for the financial impact.`;
+            
+            const result = await model.generateContent(prompt);
+            const jsonResult = JSON.parse(result.response.text());
+            rca = jsonResult.rootCauseSummary;
+            plan = {
+              planId: `PLAN-GEN-${Math.floor(1000 + Math.random() * 9000)}`,
+              caseId,
+              generatedBy: 'agent:gemini:1.5-flash',
+              timestamp: new Date().toISOString(),
+              actions: jsonResult.executionPlan.actions,
+              contingencyStrategy: jsonResult.executionPlan.contingencyStrategy,
+              estimatedFinancialImpactUsd: jsonResult.executionPlan.estimatedFinancialImpactUsd
+            };
+            console.log(`[Agent] Gemini successfully generated plan for Case ${caseId}.`);
+          } catch(e) {
+            console.error("[Agent] Gemini LLM Error, falling back to mock data.", e);
+          }
+        } else {
+            console.log("[Agent] No GEMINI_API_KEY found, using fallback simulated plan.");
+        }
+
+        // Transition DETECTED -> INVESTIGATING
         await updateCaseStatus(caseId, 'INVESTIGATING', {
           actor: 'agent:detect:v1',
           actionPerformed: 'STARTED_INVESTIGATION',
           comment: `Investigating telemetry for ${sku}`,
         });
 
-        // Step 2: Transition INVESTIGATING -> PLAN_GENERATED
+        // Transition INVESTIGATING -> PLAN_GENERATED
         await updateCaseStatus(caseId, 'PLAN_GENERATED', {
           actor: 'agent:plan:v1',
           actionPerformed: 'GENERATED_EXECUTION_PLAN',
-          comment: `Generated emergency PO expedite plan for ${sku}`,
+          comment: `Generated execution plan for ${sku}`,
           rootCauseSummary: rca,
           executionPlan: plan,
         });
 
-        // Step 3: Transition PLAN_GENERATED -> AWAITING_APPROVAL
+        // Transition PLAN_GENERATED -> AWAITING_APPROVAL
         const updated = await updateCaseStatus(caseId, 'AWAITING_APPROVAL', {
           actor: 'agent:plan:v1',
           actionPerformed: 'GENERATED_EXECUTION_PLAN',
-          comment: `Generated emergency PO expedite plan for ${sku}`,
+          comment: `Execution plan requires approval for ${sku}`,
           rootCauseSummary: rca,
           executionPlan: plan,
         });
@@ -136,15 +171,14 @@ export class MockAgentResponder {
             newStatus: 'AWAITING_APPROVAL',
             nodeCompleted: 'plan',
             executionPlanSummary: {
-              actionCount: 2,
+              actionCount: plan.actions?.length || 0,
               riskLevel: 'MEDIUM',
-              estimatedFinancialImpactUsd: 4250.00,
+              estimatedFinancialImpactUsd: plan.estimatedFinancialImpactUsd || 0,
             },
           });
-          console.log(`[Mock Agent] Case ${caseId} transitioned to AWAITING_APPROVAL with execution plan.`);
         }
       } catch (err: any) {
-        console.error(`[Mock Agent] Error planning case ${caseId}:`, err.message);
+        console.error(`[Agent] Error planning case ${caseId}:`, err.message);
       }
     }, 1500);
   }

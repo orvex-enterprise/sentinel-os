@@ -50,13 +50,17 @@ export interface CaseDetailData extends CaseItem {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/ws?token=tok_live_demo_8849201948210';
 
-export async function fetchCases(): Promise<CaseItem[]> {
-  const res = await fetch(`${API_BASE_URL}/cases`, {
+export async function fetchCases(limit: number = 20): Promise<{cases: CaseItem[], total: number, pendingTotal: number}> {
+  const res = await fetch(`${API_BASE_URL}/cases?limit=${limit}`, {
     headers: { Authorization: 'Bearer tok_live_demo_8849201948210' },
   });
   if (!res.ok) throw new Error('Failed to fetch cases');
   const json = await res.json();
-  return json.data || [];
+  return {
+    cases: json.data || [],
+    total: json.pagination?.total || 0,
+    pendingTotal: json.pagination?.pendingTotal || 0,
+  };
 }
 
 export async function fetchCaseDetail(id: string): Promise<CaseDetailData> {

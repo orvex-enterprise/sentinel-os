@@ -124,7 +124,7 @@ def main():
     parser.add_argument("--mode", choices=["redis", "http", "auto"], default="auto", help="Publishing mode")
     parser.add_argument("--redis-url", default=os.getenv("REDIS_URL", "redis://localhost:6379"), help="Redis URL")
     parser.add_argument("--gateway-url", default=os.getenv("GATEWAY_URL", "http://localhost:4000"), help="API Gateway URL")
-    parser.add_argument("--interval", type=float, default=2.0, help="Interval between events in seconds")
+    parser.add_argument("--interval", type=float, default=30.0, help="Interval between events in seconds")
     parser.add_argument("--count", type=int, default=0, help="Number of events to generate (0 = infinite)")
     args = parser.parse_args()
 
