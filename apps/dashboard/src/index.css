@@ -167,3 +167,15 @@ h1, h2, h3, h4, h5, h6 {
 .animate-slide-up {
   animation: slide-up 0.5s ease-out forwards;
 }
+
+/* Hide Scrollbar globally */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+  display: none;
+}
+
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
