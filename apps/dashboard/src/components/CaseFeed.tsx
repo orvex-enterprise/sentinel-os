@@ -40,7 +40,7 @@ export const CaseFeed: React.FC<CaseFeedProps> = ({
       (statusFilter === 'REJECTED' && c.status === 'CLOSED_REJECTED') ||
       (statusFilter === 'PENDING_APPROVAL' && c.status === 'AWAITING_APPROVAL');
     return matchesSearch && matchesStatus;
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const getStatusBadge = (status: string) => {
     switch (status) {
