@@ -8,6 +8,7 @@ interface TelemetryStreamProps {
 }
 
 export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, activeZScore }) => {
+  const [isSimulating, setIsSimulating] = useState(false);
   const [streamData, setStreamData] = useState({
     receivingRate: 42.5,
     dockTurnaroundMins: 48.2,
@@ -24,6 +25,8 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
   ]);
 
   useEffect(() => {
+    if (!isSimulating) return;
+
     const interval = setInterval(() => {
       setStreamData((prev) => ({
         ...prev,
@@ -44,10 +47,10 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
           return item;
         })
       );
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isSimulating]);
 
   useEffect(() => {
     // If activeSku is provided, ensure it's in the list for the chart
@@ -73,9 +76,13 @@ export const TelemetryStream: React.FC<TelemetryStreamProps> = ({ activeSku, act
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <span className="badge badge-info" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Database size={14} /> Redis Stream Shard-01 Active
-          </span>
+          <button 
+            onClick={() => setIsSimulating(!isSimulating)}
+            className={`badge ${isSimulating ? 'badge-info' : 'badge-critical'}`} 
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
+          >
+            <Database size={14} /> {isSimulating ? 'Redis Stream Active (Pause)' : 'Redis Stream Paused (Simulate)'}
+          </button>
         </div>
       </div>
 
