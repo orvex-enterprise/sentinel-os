@@ -81,7 +81,7 @@ if (process.env.NODE_ENV !== 'test') {
       consumeEvents(redisClient, async (messageId, envelope) => {
         
         // If simulation is paused, drop auto-generated simulator events to prevent spam
-        if (!isSystemSimulationActive && envelope.source_system === 'WMS-SIMULATOR') {
+        if (!isSystemSimulationActive && envelope.source_system === 'simulator:wms:v1') {
           // Returning early without throwing will cause xack to run in consumeEvents, dropping it safely.
           return;
         }
