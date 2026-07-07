@@ -110,6 +110,33 @@ if (process.env.NODE_ENV !== 'test') {
       }).catch((err) => {
         console.error('[Stream Consumer] Loop terminated with error:', err.message);
       });
+      
+      // Embedded Auto-Simulator for Demo
+      setInterval(async () => {
+        if (!isSystemSimulationActive) return;
+        
+        try {
+          const skus = ['SKU-9942', 'SKU-3101', 'SKU-7821', 'SKU-4410', 'SKU-8829'];
+          const randomSku = skus[Math.floor(Math.random() * skus.length)];
+          const mockEnvelope = {
+            event_id: crypto.randomUUID(),
+            event_type: 'simulator.auto.event',
+            timestamp: new Date().toISOString(),
+            source_system: 'simulator:embedded',
+            correlation_id: crypto.randomUUID(),
+            payload: {
+              sku: randomSku,
+              z_score: 2.0 + Math.random() * 2.5,
+              root_cause_hint: `Auto-generated simulation event for ${randomSku}`
+            }
+          };
+          
+          await publishEvent(redisClient, mockEnvelope);
+        } catch (e: any) {
+          console.warn('[Embedded Simulator] Failed to publish:', e.message);
+        }
+      }, 30000); // Every 30 seconds
+
     } catch (err: any) {
       console.warn('[Stream Consumer] Redis stream initialization skipped (Redis offline):', err.message);
     }
