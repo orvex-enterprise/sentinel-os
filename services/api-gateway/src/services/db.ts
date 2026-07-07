@@ -307,14 +307,20 @@ export async function createCaseFromEvent(envelope: any): Promise<string> {
   }
   const eventTitle = formattedName;
   
+  const zScore = envelope.payload?.z_score || 2.85;
+  let severity = 'MEDIUM';
+  if (zScore >= 3.5) severity = 'CRITICAL';
+  else if (zScore >= 2.0) severity = 'HIGH';
+  else severity = 'LOW';
+
   const memCase: MemoryCase = {
     id: caseId,
     domain: envelope.domain || 'INVENTORY',
     title: eventTitle,
     status: 'DETECTED',
-    severity: 'HIGH',
+    severity,
     sku,
-    zScore: envelope.payload?.z_score || 2.85,
+    zScore,
     rootCauseSummary: envelope.payload?.root_cause_hint || 'Simulated Anomaly: Sudden 35% spike in demand detected at regional distribution center, causing imminent stockout risk before the next scheduled supplier delivery.',
     executionPlan: {
       planId: `plan_${Math.random().toString(36).substring(7)}`,

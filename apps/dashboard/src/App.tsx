@@ -118,7 +118,7 @@ export default function App() {
   const handleTriggerSimulation = async () => {
     setIsInjecting(true);
     try {
-      const { caseId } = await dispatchSimulationEvent();
+      const { caseId } = await dispatchSimulationEvent('SKU-9942', true);
       toast.success(`Demo anomaly injected! Initiating swarm resolution for Case ${caseId}...`, { icon: '🤖' });
       await loadCases();
     } catch (err: any) {

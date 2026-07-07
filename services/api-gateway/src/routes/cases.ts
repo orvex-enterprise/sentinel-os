@@ -166,10 +166,18 @@ casesRouter.post('/:id/reject', async (req: AuthenticatedRequest, res: Response)
   }
 });
 
+import { isSystemSimulationActive } from '../index';
+
 let lastAnomalyTimestamp = 0;
 
 // POST /api/v1/cases/:id/events (Sprint 2 Day 29 event dispatch endpoint)
 casesRouter.post('/:id/events', async (req: AuthenticatedRequest, res: Response) => {
+  const isManualOverride = req.body?.is_manual === true;
+  if (!isSystemSimulationActive && !isManualOverride) {
+    res.status(403).json({ success: false, error: 'Simulation is paused. Manual override required.' });
+    return;
+  }
+  
   const now = Date.now();
   if (now - lastAnomalyTimestamp < 10000) {
     res.status(429).json({ success: false, error: 'Rate limit exceeded. Please wait 10s between anomalies.' });

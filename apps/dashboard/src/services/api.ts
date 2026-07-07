@@ -113,7 +113,7 @@ export async function rejectCase(id: string, reason: string): Promise<any> {
   return res.json();
 }
 
-export async function dispatchSimulationEvent(sku: string = 'SKU-9942'): Promise<any> {
+export async function dispatchSimulationEvent(sku: string = 'SKU-9942', isManual: boolean = false): Promise<any> {
   const caseId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `c83e129b-0000-4000-8000-${Math.floor(Date.now() / 1000)}`;
   const res = await fetch(`${API_BASE_URL}/cases/${caseId}/events`, {
     method: 'POST',
@@ -123,6 +123,7 @@ export async function dispatchSimulationEvent(sku: string = 'SKU-9942'): Promise
     },
     body: JSON.stringify({
       event_type: 'wms.stock_update',
+      is_manual: isManual,
       payload: {
         sku,
         metrics: { current_stock: 10, reorder_point: 50 },
