@@ -1,4 +1,5 @@
 import http from 'http';
+import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -8,7 +9,7 @@ import { errorHandler } from './middleware/error';
 import { casesRouter } from './routes/cases';
 import { initWsServer, broadcastCaseStateUpdate } from './ws/hub';
 import { redisClient } from './redis/client';
-import { initConsumerGroup, consumeEvents } from './redis/stream';
+import { initConsumerGroup, consumeEvents, publishEvent } from './redis/stream';
 import { getCaseById, createCaseFromEvent } from './services/db';
 import { mockAgentResponder } from './services/mock-agent';
 
