@@ -14,8 +14,7 @@
 ## 🌐 Live Cloud Demo (Railway Production)
 
 Experience Sentinel OS live in the cloud without local setup:
-- **👉 [Launch Mission Control Dashboard (Live Demo)](https://sentinel-dashboard-production-5e63.up.railway.app)**
-- **API Gateway Endpoint:** `https://sentinel-api-gateway-production-782d.up.railway.app/api/v1`
+- **👉 [Launch Mission Control Dashboard (Live Demo)](https://dashboard-production-8c21.up.railway.app/)**
 
 ---
 
