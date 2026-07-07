@@ -135,6 +135,19 @@ export async function dispatchSimulationEvent(sku: string = 'SKU-9942'): Promise
   return res.json();
 }
 
+export async function setSimulationState(active: boolean): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/system/simulation`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer tok_live_demo_8849201948210',
+    },
+    body: JSON.stringify({ active }),
+  });
+  if (!res.ok) throw new Error('Failed to set simulation state');
+  return res.json();
+}
+
 export function connectWebSocket(onMessage: (data: any) => void): WebSocket {
   const ws = new WebSocket(WS_URL);
   ws.onopen = () => {

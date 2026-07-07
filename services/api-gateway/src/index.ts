@@ -47,6 +47,15 @@ app.use('/api/v1', authMiddleware);
 // Routes (§23.1)
 app.use('/api/v1/cases', casesRouter);
 
+// Global Simulation State for Demo
+export let isSystemSimulationActive = false;
+
+app.post('/api/v1/system/simulation', (req, res) => {
+  isSystemSimulationActive = req.body.active === true;
+  console.log(`[System] Simulation active state changed to: ${isSystemSimulationActive}`);
+  res.status(200).json({ success: true, active: isSystemSimulationActive });
+});
+
 // Error handling middleware
 app.use(errorHandler);
 
@@ -70,6 +79,13 @@ if (process.env.NODE_ENV !== 'test') {
       
       // Start background event consumption loop
       consumeEvents(redisClient, async (messageId, envelope) => {
+        
+        // If simulation is paused, drop auto-generated simulator events to prevent spam
+        if (!isSystemSimulationActive && envelope.source_system === 'WMS-SIMULATOR') {
+          // Returning early without throwing will cause xack to run in consumeEvents, dropping it safely.
+          return;
+        }
+
         console.log(`[Stream Consumer] Processing event ${messageId} (${envelope.event_type}) from ${envelope.source_system}`);
         
         const caseId = envelope.correlation_id;
