@@ -115,35 +115,45 @@ export default function App() {
     if (!isSwarmActive) return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
+    let isCancelled = false;
 
     const triggerNext = () => {
+      if (isCancelled) return;
+      
       // Delay between 25 and 45 seconds to keep rate low (1-2 per minute)
       const delay = Math.floor(Math.random() * 20000) + 25000;
       
       timeoutId = setTimeout(() => {
+        if (isCancelled) return;
+        
         // Only trigger if this specific browser tab is active/visible
-        // This prevents 20-30 anomalies if the user has multiple tabs open
+        // This prevents anomalies if the user has multiple tabs open
         if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
           dispatchSimulationEvent()
             .then(({ caseId }) => {
+              if (isCancelled) return;
               toast.success(`Automated Demo Anomaly injected: Case ${caseId}`, { icon: '🤖' });
               loadCases();
             })
             .catch((err) => {
+              if (isCancelled) return;
               console.error('[Simulation Error]', err);
             })
             .finally(() => {
-              triggerNext();
+              if (!isCancelled) triggerNext();
             });
         } else {
-          triggerNext();
+          if (!isCancelled) triggerNext();
         }
       }, delay);
     };
 
     triggerNext();
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [isSwarmActive, loadCases]);
 
   const handleTriggerSimulation = async () => {
