@@ -51,8 +51,20 @@ export const AuditLog: React.FC<AuditLogProps> = ({ auditTrail }) => {
             </div>
             {log.details && Object.keys(log.details).length > 0 && (
               <div style={{ marginTop: '12px', padding: '8px 12px', background: 'var(--bg-tertiary)', borderRadius: '4px', fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}>
-                <Hash size={10} style={{ display: 'inline', marginRight: '4px' }} />
-                {JSON.stringify(log.details)}
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', color: 'var(--text-muted)' }}>
+                  <Hash size={12} style={{ marginRight: '6px' }} />
+                  <span style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payload Details</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid var(--border-subtle)' }}>
+                  {Object.entries(log.details).map(([key, value]) => (
+                    <div key={key} style={{ display: 'flex', gap: '8px', lineHeight: 1.4 }}>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 500, minWidth: '100px' }}>{key}:</span>
+                      <span style={{ color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
