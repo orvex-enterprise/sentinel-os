@@ -113,7 +113,7 @@ export async function rejectCase(id: string, reason: string): Promise<any> {
   return res.json();
 }
 
-export async function dispatchSimulationEvent(sku: string): Promise<any> {
+export async function dispatchSimulationEvent(sku: string = 'SKU-9942'): Promise<any> {
   const caseId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `c83e129b-0000-4000-8000-${Math.floor(Date.now() / 1000)}`;
   const res = await fetch(`${API_BASE_URL}/cases/${caseId}/events`, {
     method: 'POST',
