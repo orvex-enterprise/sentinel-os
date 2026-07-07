@@ -166,8 +166,16 @@ casesRouter.post('/:id/reject', async (req: AuthenticatedRequest, res: Response)
   }
 });
 
+let lastAnomalyTimestamp = 0;
+
 // POST /api/v1/cases/:id/events (Sprint 2 Day 29 event dispatch endpoint)
 casesRouter.post('/:id/events', async (req: AuthenticatedRequest, res: Response) => {
+  const now = Date.now();
+  if (now - lastAnomalyTimestamp < 10000) {
+    res.status(429).json({ success: false, error: 'Rate limit exceeded. Please wait 10s between anomalies.' });
+    return;
+  }
+  lastAnomalyTimestamp = now;
   try {
     const payload = req.body || {};
     const eventType = payload.event_type || 'manual.event.dispatched';
