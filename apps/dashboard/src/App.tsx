@@ -42,6 +42,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Initial fetch
     loadCases();
   }, [loadCases]);
 
