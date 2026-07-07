@@ -8,41 +8,52 @@ interface AgentActivityProps {
 }
 
 export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'DETECTED', sku = 'SKU-9942' }) => {
-  const [chartData, setChartData] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Fill initial chart data
-    const initialData = Array.from({ length: 20 }, (_, i) => ({
+  const [isSimulating, setIsSimulating] = useState(true);
+  const [chartData, setChartData] = useState<any[]>(() => 
+    Array.from({ length: 20 }, (_, i) => ({
       time: i,
       load: 10 + Math.random() * 20,
       confidence: 90 + Math.random() * 5,
-    }));
-    setChartData(initialData);
+    }))
+  );
+  const [metrics, setMetrics] = useState({
+    nodes: 1429,
+    latency: 1.84,
+    confidence: 94.8
+  });
+
+  useEffect(() => {
+    if (!isSimulating) return;
 
     const timer = setInterval(() => {
+      let newLoad = 10 + Math.random() * 20;
+      let newConfidence = 90 + Math.random() * 5;
+
+      if (currentStatus === 'INVESTIGATING' || currentStatus === 'EXECUTING') {
+        newLoad = 70 + Math.random() * 30; // High load
+        newConfidence = 75 + Math.random() * 10; // Lower confidence while investigating
+      } else if (currentStatus === 'PLAN_GENERATED' || currentStatus === 'AWAITING_APPROVAL' || currentStatus === 'APPROVED') {
+        newLoad = 30 + Math.random() * 20;
+        newConfidence = 95 + Math.random() * 4; // High confidence when plan is ready
+      } else if (currentStatus === 'CLOSED_SUCCESS') {
+         newLoad = 10 + Math.random() * 10;
+         newConfidence = 98 + Math.random() * 2;
+      }
+
       setChartData(prev => {
         const newTime = prev[prev.length - 1].time + 1;
-        let newLoad = 10 + Math.random() * 20;
-        let newConfidence = 90 + Math.random() * 5;
-
-        if (currentStatus === 'INVESTIGATING' || currentStatus === 'EXECUTING') {
-          newLoad = 70 + Math.random() * 30; // High load
-          newConfidence = 75 + Math.random() * 10; // Lower confidence while investigating
-        } else if (currentStatus === 'PLAN_GENERATED' || currentStatus === 'AWAITING_APPROVAL' || currentStatus === 'APPROVED') {
-          newLoad = 30 + Math.random() * 20;
-          newConfidence = 95 + Math.random() * 4; // High confidence when plan is ready
-        } else if (currentStatus === 'CLOSED_SUCCESS') {
-           newLoad = 10 + Math.random() * 10;
-           newConfidence = 98 + Math.random() * 2;
-        }
-
-        const newData = [...prev.slice(1), { time: newTime, load: newLoad, confidence: newConfidence }];
-        return newData;
+        return [...prev.slice(1), { time: newTime, load: newLoad, confidence: newConfidence }];
       });
+
+      setMetrics(prev => ({
+        nodes: prev.nodes + Math.floor(Math.random() * 3),
+        latency: 1.84 + (Math.random() * 0.4 - 0.2),
+        confidence: newConfidence
+      }));
     }, 2000);
 
     return () => clearInterval(timer);
-  }, [currentStatus]);
+  }, [currentStatus, isSimulating]);
 
   const getNodeStatus = (nodeName: string) => {
     if (currentStatus === 'CLOSED_SUCCESS' || currentStatus === 'RESOLVED') return 'completed';
@@ -55,22 +66,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
     return 'completed';
   };
 
-  const [metrics, setMetrics] = useState({
-    nodes: 1429,
-    latency: 1.84,
-    confidence: 94.8
-  });
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        nodes: prev.nodes + Math.floor(Math.random() * 3),
-        latency: 1.84 + (Math.random() * 0.4 - 0.2),
-        confidence: Math.min(99.9, Math.max(90.1, prev.confidence + (Math.random() * 2 - 1)))
-      }));
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -84,9 +80,17 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({ currentStatus = 'D
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <span className="badge badge-success" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Activity size={14} /> Swarm Active
-          </span>
+          <button 
+            onClick={() => setIsSimulating(!isSimulating)}
+            className={`badge ${isSimulating ? 'badge-success' : 'badge-critical'}`} 
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', outline: 'none' }}
+          >
+            {isSimulating ? (
+              <><Activity size={14} /> Swarm Active (Pause)</>
+            ) : (
+              <><Terminal size={14} /> Swarm Paused (Resume)</>
+            )}
+          </button>
         </div>
       </div>
 
