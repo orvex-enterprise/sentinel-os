@@ -129,7 +129,8 @@ if (process.env.NODE_ENV !== 'test') {
               sku: randomSku,
               z_score: 2.0 + Math.random() * 2.5,
               root_cause_hint: `Auto-generated simulation event for ${randomSku}`
-            }
+            },
+            version: '1.0'
           };
           
           await publishEvent(redisClient, mockEnvelope);
