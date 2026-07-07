@@ -12,9 +12,11 @@ export const redisClient = new Redis(REDIS_URL, {
 });
 
 redisClient.on('error', (err) => {
-  console.error('[Redis Client] Error:', err.message);
+  console.error('[Redis Client] Error details:', err);
 });
 
 redisClient.on('connect', () => {
-  console.log('[Redis Client] Connected to Redis at', REDIS_URL);
+  console.log('[Redis Client] Connected to Redis!');
 });
+
+console.log('[Redis Client] Initializing connection to URL starting with:', REDIS_URL.substring(0, 15) + '...');
